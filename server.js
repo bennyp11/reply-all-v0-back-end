@@ -55,17 +55,26 @@ app.post('/join', (req, res) => {
   }
 });
 
-app.get('/game/:gameId', (req, res) => {
+app.get('/hitreplyall/:gameId/:nickName', (req, res) => {
   const gameId = req.params.gameId;
+  const nickName = req.params.nickName;
+  console.log('NICKNAME: ', nickName);
   
   // Retrieve nicknames for game ID from cache
-  const nickNames = gameCache[gameId] || [];
-  
+  let nickNames = gameCache[gameId] || [];
+
+  // Add new nickname to nickNames array
+  nickNames.push(nickName);
+  console.log(nickNames);
+
   console.log(`Retrieving nickNames for game ID ${gameId}`);
-  console.log(`Nicknames: ${JSON.stringify(nickNames)}`);
+  console.log(`Nicknames: ${nickNames}`);
+
+  // Update nicknames for game ID in cache
   
   res.send({ nickNames });
 });
+
 
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
