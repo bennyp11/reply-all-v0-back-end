@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const WebSocket = require('ws');
 
 const app = express();
 const port = 3005;
@@ -10,6 +11,8 @@ app.use(cors());
 
 // Cache to store game IDs and nicknames
 const gameCache = {};
+
+const wss = new WebSocket.Server({ port: 8082 });
 
 app.options('/', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001');
@@ -50,6 +53,13 @@ app.post('/join', (req, res) => {
     console.log(`Received nickName: ${nickName}`);
     console.log(`Received game ID: ${gameId}`);
     console.log(`Game cache: ${JSON.stringify(gameCache)}`);
+
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        const nickNames = gameCache[gameId] || [];
+        client.send(JSON.stringify({ nickNames }));
+      }
+    });
     
     res.send({ message: 'Nickname added' });
   }
