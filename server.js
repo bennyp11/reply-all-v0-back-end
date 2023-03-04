@@ -64,7 +64,6 @@ app.get('/hitreplyall/:gameId/:nickName', (req, res) => {
   let nickNames = gameCache[gameId] || [];
 
   // Add new nickname to nickNames array
-  nickNames.push(nickName);
   console.log(nickNames);
 
   console.log(`Retrieving nickNames for game ID ${gameId}`);
