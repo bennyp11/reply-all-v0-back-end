@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const WebSocket = require('ws');
+const fs = require('fs');
 
 const app = express();
 const port = 3005;
@@ -65,7 +66,7 @@ app.post('/join', (req, res) => {
   }
 });
 
-app.get('/hitreplyall/:gameId/:nickName', (req, res) => {
+app.get('/hitreplyall/:gameId/:nickName/initaldeal', (req, res) => {
   const gameId = req.params.gameId;
   const nickName = req.params.nickName;
   console.log('NICKNAME: ', nickName);
@@ -79,10 +80,45 @@ app.get('/hitreplyall/:gameId/:nickName', (req, res) => {
   console.log(`Retrieving nickNames for game ID ${gameId}`);
   console.log(`Nicknames: ${nickNames}`);
 
+  const cards = JSON.parse(fs.readFileSync('./cards.json', 'utf8'));
+
+  const replyAllCards = cards.filter(card => card.CardType === "ReplyAll");
+  const inboxCards = cards.filter(card => card.CardType === "Inbox");
+
+  // Fisher-Yates shuffle algorithm
+  for (let i = replyAllCards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [replyAllCards[i], replyAllCards[j]] = [replyAllCards[j], replyAllCards[i]];
+  }
+
+  const dealtCards = replyAllCards.slice(0, 7); // select the first 7 cards of the shuffled array
+
   // Update nicknames for game ID in cache
   
-  res.send({ nickNames });
+  res.send({ nickNames, dealtCards });
 });
+
+/*app.get('/hitreply/:gameId/:nickName/initaldeal', (req, res) => {
+  console.log('inital deal hit');
+  const gameId = req.params.gameId;
+  const nickName = req.params.nickName;
+
+  // Read the JSON array of cards from cards.json
+  const cards = JSON.parse(fs.readFileSync('./cards.json', 'utf8'));
+
+  const replyAllCards = cards.filter(card => card.CardType === "ReplyAll");
+  const inboxCards = cards.filter(card => card.CardType === "Inbox");
+
+  // Fisher-Yates shuffle algorithm
+  for (let i = replyAllCards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [replyAllCards[i], replyAllCards[j]] = [replyAllCards[j], replyAllCards[i]];
+  }
+
+  const dealtCards = replyAllCards.slice(0, 7); // select the first 7 cards of the shuffled array
+  
+  res.send({ dealtCards });
+});*/
 
 
 app.listen(port, () => {
