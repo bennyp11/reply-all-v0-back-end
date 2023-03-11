@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const WebSocket = require('ws');
 const fs = require('fs');
+var Mutex = require('async-mutex').Mutex;
 
 const app = express();
 const port = 3005;
@@ -90,21 +91,31 @@ app.get('/hitreplyall/:gameId/:nickName/initaldeal', (req, res) => {
   const gameId = req.params.gameId;
   const nickName = req.params.nickName;
   console.log('NICKNAME: ', nickName);
-  
-  // Retrieve nicknames for game ID from cache
-  let nickNames = gameCache[gameId].nickNames || [];
-  //console.log('initialDeal ROUTE: ',gameCache[gameId]);
 
-  // Add new nickname to nickNames array
-  console.log(nickNames);
+  // Use a mutex to synchronize access to the gameCache object
+  const mutex = new Mutex();
+  mutex.acquire().then((release) => {
+    try {
+      // Retrieve nicknames for game ID from cache
+      let nickNames = gameCache[gameId].nickNames || [];
 
-  console.log(`Retrieving nickNames for game ID ${gameId}`);
-  console.log(`Nicknames: ${nickNames}`);
+      // Send the first 7 cards from the replyAllCards array in a JSON object
+      const replyAllCards = gameCache[gameId].replyAllCards || [];
+      const cardsToSend = replyAllCards.splice(0, 7);
+      res.send({ nickNames, cardsToSend });
 
+      // Release the mutex and remove the cards from the replyAllCards array
+      release();
+    } catch (error) {
+      console.error(error);
 
-  
-  res.send({ nickNames });
+      // Release the mutex if an error occurs
+      release();
+      res.status(500).send({ message: 'Internal server error' });
+    }
+  });
 });
+
 
 /*app.get('/hitreply/:gameId/:nickName/initaldeal', (req, res) => {
   console.log('inital deal hit');
