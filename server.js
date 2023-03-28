@@ -54,8 +54,6 @@ app.post('/start', (req, res) => {
   gameCache[gameId].replyAllCards = replyAllCards;
   gameCache[gameId].inboxCards = inboxCards;
 
-  console.log(gameCache[gameId].inboxCards);
-
   res.send({ message: 'Game ID received' });
 });
 
@@ -64,6 +62,10 @@ app.post('/start', (req, res) => {
 app.post('/join', (req, res) => {
   const gameId = req.body.gameId;
   const nickName = req.body.nickName;
+  const hand = gameCache[gameId].replyAllCards.splice(0, 7);
+  const newPlayer = { nickName, hand };
+  gameCache[gameId].nickNames.push(newPlayer);
+
   
   // Check if game ID exists in cache
   if (!gameCache[gameId]) {
@@ -75,7 +77,6 @@ app.post('/join', (req, res) => {
     
     console.log(`Received nickName: ${nickName}`);
     console.log(`Received game ID: ${gameId}`);
-    console.log(`Game cache: ${JSON.stringify(gameCache)}`);
 
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
@@ -104,6 +105,7 @@ app.get('/hitreplyall/:gameId/:nickName/initaldeal', (req, res) => {
 
       // Retrieve nicknames for game ID from cache
       let nickNames = gameCache[gameId].nickNames || [];
+      console.log(nickNames);
 
       const player = nickNames.find((player) => player.nickName === nickName);
       if (!player) {
