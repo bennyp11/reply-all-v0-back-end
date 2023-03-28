@@ -44,12 +44,13 @@ app.post('/start', (req, res) => {
     }
   }
 
-  // Add nickname to game ID in cache
   if (!gameCache[gameId]) {
     gameCache[gameId] = { nickNames: [], replyAllCards: [], inboxCards: [] };
   }
 
-  gameCache[gameId].nickNames.push(nickName);
+  const hand = replyAllCards.splice(0, 7);
+  const newPlayer = { nickName, hand };
+  gameCache[gameId].nickNames.push(newPlayer);
   gameCache[gameId].replyAllCards = replyAllCards;
   gameCache[gameId].inboxCards = inboxCards;
 
@@ -90,31 +91,39 @@ app.post('/join', (req, res) => {
 app.get('/hitreplyall/:gameId/:nickName/initaldeal', (req, res) => {
   const gameId = req.params.gameId;
   const nickName = req.params.nickName;
-  console.log('NICKNAME: ', nickName);
 
-  // Use a mutex to synchronize access to the gameCache object
   const mutex = new Mutex();
   mutex.acquire().then((release) => {
     try {
+      // Check if game ID exists in cache
+      if (!gameCache[gameId]) {
+        res.status(404).send({ message: 'Game ID not found' });
+        release();
+        return;
+      }
+
       // Retrieve nicknames for game ID from cache
       let nickNames = gameCache[gameId].nickNames || [];
 
-      // Send the first 7 cards from the replyAllCards array in a JSON object
-      const replyAllCards = gameCache[gameId].replyAllCards || [];
-      const cardsToSend = replyAllCards.splice(0, 7);
-      res.send({ nickNames, cardsToSend });
+      const player = nickNames.find((player) => player.nickName === nickName);
+      if (!player) {
+        res.status(404).send({ message: 'Player not found' });
+        release();
+        return;
+      }
 
-      // Release the mutex and remove the cards from the replyAllCards array
+      res.send({ nickNames, cardsToSend: player.hand });
+
       release();
     } catch (error) {
       console.error(error);
 
-      // Release the mutex if an error occurs
       release();
       res.status(500).send({ message: 'Internal server error' });
     }
   });
 });
+
 
 
 /*app.get('/hitreply/:gameId/:nickName/initaldeal', (req, res) => {
