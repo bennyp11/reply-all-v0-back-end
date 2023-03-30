@@ -138,7 +138,7 @@ app.post('/beginmatch', (req, res) => {
 
   const nickNames = gameCache[gameId].nickNames || [];
 
-  if (nickNames.length < 1) {
+  if (nickNames.length < 3) {
     res.status(400).send({ message: 'Not enough players in the game' });
     return;
   }
