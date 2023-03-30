@@ -73,7 +73,6 @@ app.post('/join', (req, res) => {
     res.status(400).send({ message: 'Invalid game code' });
   } else {
     // Add nickname to game ID in cache
-    gameCache[gameId].nickNames.push(nickName);
     
     console.log(`Received nickName: ${nickName}`);
     console.log(`Received game ID: ${gameId}`);
