@@ -126,6 +126,45 @@ app.get('/hitreplyall/:gameId/:nickName/initaldeal', (req, res) => {
 });
 
 
+app.post('/beginmatch', (req, res) => {
+  const gameId = req.body.gameId;
+
+  // Check if game ID exists in cache
+  if (!gameCache[gameId]) {
+    console.log(`Invalid game code: ${gameId}`);
+    res.status(400).send({ message: 'Invalid game code' });
+    return;
+  }
+
+  const nickNames = gameCache[gameId].nickNames || [];
+
+  if (nickNames.length < 1) {
+    res.status(400).send({ message: 'Not enough players in the game' });
+    return;
+  }
+
+  const inboxCards = gameCache[gameId].inboxCards || [];
+
+  if (inboxCards.length < 1) {
+    res.status(400).send({ message: 'No more inbox cards' });
+    return;
+  }
+
+  const inboxCard = inboxCards.splice(0, 1)[0];
+  const firstPlayer = nickNames[0];
+
+  firstPlayer.hand.push(inboxCard);
+
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      const nickNames = gameCache[gameId].nickNames || [];
+      client.send(JSON.stringify({ nickNames }));
+    }
+  });
+
+  res.send({ message: 'Inbox card dealt to first player' });
+});
+
 
 /*app.get('/hitreply/:gameId/:nickName/initaldeal', (req, res) => {
   console.log('inital deal hit');
