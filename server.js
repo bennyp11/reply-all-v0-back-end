@@ -165,29 +165,44 @@ app.post('/beginmatch', (req, res) => {
   res.send({ message: 'Inbox card dealt to first player' });
 });
 
+app.post('/replyallcardplayed', (req, res) => {
+  const { gameId, nickName, cardIndex } = req.body;
 
-/*app.get('/hitreply/:gameId/:nickName/initaldeal', (req, res) => {
-  console.log('inital deal hit');
-  const gameId = req.params.gameId;
-  const nickName = req.params.nickName;
-
-  // Read the JSON array of cards from cards.json
-  const cards = JSON.parse(fs.readFileSync('./cards.json', 'utf8'));
-
-  const replyAllCards = cards.filter(card => card.CardType === "ReplyAll");
-  const inboxCards = cards.filter(card => card.CardType === "Inbox");
-
-  // Fisher-Yates shuffle algorithm
-  for (let i = replyAllCards.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [replyAllCards[i], replyAllCards[j]] = [replyAllCards[j], replyAllCards[i]];
+  if (!gameCache[gameId]) {
+    res.status(400).send({ message: 'Invalid game code' });
+    return;
   }
 
-  const dealtCards = replyAllCards.slice(0, 7); // select the first 7 cards of the shuffled array
-  
-  res.send({ dealtCards });
-});*/
+  const player = gameCache[gameId].nickNames.find(player => player.nickName === nickName);
+  if (!player) {
+    res.status(404).send({ message: 'Player not found' });
+    return;
+  }
 
+  const playedCard = player.hand.splice(cardIndex, 1)[0];
+
+  res.send({ message: 'ReplyAll card played', playedCard });
+});
+
+app.post('/replyallcardselected', (req, res) => {
+  const { gameId, selectedCardIndex } = req.body;
+
+  if (!gameCache[gameId]) {
+    res.status(400).send({ message: 'Invalid game code' });
+    return;
+  }
+
+  const replyAllCards = gameCache[gameId].replyAllCards;
+
+  if (selectedCardIndex < 0 || selectedCardIndex >= replyAllCards.length) {
+    res.status(400).send({ message: 'Invalid card index' });
+    return;
+  }
+
+  const selectedCard = replyAllCards[selectedCardIndex];
+
+  res.send({ message: 'ReplyAll card selected', selectedCard });
+});
 
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
